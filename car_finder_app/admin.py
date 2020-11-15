@@ -1,9 +1,10 @@
 from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin
+from django.contrib.gis.db.models.functions import Distance
 from django.contrib.humanize.templatetags.humanize import naturaltime, intcomma
 from django.db.models import Q
 
-from car_finder_app.models import CarSaleInfo, CarModel, CarBrand, Generation, SpiderRun
+from car_finder_app.models import CarSaleInfo, CarModel, CarBrand, Generation, SpiderRun, UserProfile, City
 
 
 class Singleton(type):
@@ -62,6 +63,42 @@ class InSaleFilter(admin.SimpleListFilter):
         if self.value() == 'insale':
             last_spider_run = SpiderRun.objects.last()
             return queryset.filter(last_spider_run=last_spider_run)
+
+
+class DistanceFilter(admin.SimpleListFilter):
+    title = 'Distance range'
+    parameter_name = 'distance'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('50km', '50 Km'),
+            ('100km', '100 Km'),
+            ('200km', '200 Km'),
+            ('300km', '300 Km'),
+            ('500km', '500 Km'),
+            ('900km', '900 Km'),
+        )
+
+    def queryset(self, request, queryset):
+        user = request.user
+        distance = None
+        if user.profile and user.profile.city:
+            city = user.profile.city
+            if self.value() == '50km':
+                distance = (city.point, 50000)
+            if self.value() == '100km':
+                distance = (city.point, 100000)
+            if self.value() == '200km':
+                distance = (city.point, 200000)
+            if self.value() == '300km':
+                distance = (city.point, 300000)
+            if self.value() == '500km':
+                distance = (city.point, 500000)
+            if self.value() == '900km':
+                distance = (city.point, 900000)
+        if distance:
+            queryset = queryset.select_related('city').filter(city__point__distance_lte=distance)
+        return queryset
 
 
 class BrandFilter(AutocompleteFilter):
@@ -126,10 +163,16 @@ class BrandAdmin(admin.ModelAdmin):
         return queryset, use_distinct
 
 
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    pass
+
+
 @admin.register(CarSaleInfo)
 class CarSale(admin.ModelAdmin):
     list_display = ('get_country',
                     'get_city',
+                    'distance',
                     'model',
                     'get_generation',
                     'manufactured',
@@ -141,6 +184,7 @@ class CarSale(admin.ModelAdmin):
     autocomplete_fields = ['model', 'brand']
     list_filter = (PriceFilter,
                    InSaleFilter,
+                   DistanceFilter,
                    BrandFilter,
                    ModelFilter,
                    GenerationFilter,
@@ -148,6 +192,20 @@ class CarSale(admin.ModelAdmin):
 
     class Media:
         pass
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
+        if user.profile and user.profile.city:
+            user_city = user.profile.city
+            qs = qs.select_related('city', 'country', 'model', 'generation').annotate(distance=Distance('city__point', user_city.point))
+        return qs
+
+    def distance(self, obj):
+        if obj.distance is not None:
+            return f'{int(obj.distance.km)} km'
+
+    distance.admin_order_field = 'distance'
 
     def formatted_price(self, obj):
         if obj.price:

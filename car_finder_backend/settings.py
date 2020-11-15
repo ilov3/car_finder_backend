@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.gis',
     'admin_auto_filters',
     'car_finder_app',
 ]
@@ -75,7 +76,7 @@ WSGI_APPLICATION = 'car_finder_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'car_finder',
         'USER': 'bulat',
     }
@@ -120,5 +121,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # SCRAPY SETTINGS
 SCRAPY_ITEMS_REDIS_KEY = 'Drive2:items'
+SCRAPY_LAUNCH_INTERVAL = 60
 SCRAPY_REDIS_PORT = 6379
 SCRAPY_REDIS_HOST = '127.0.0.1'
