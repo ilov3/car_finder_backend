@@ -21,6 +21,7 @@ R = redis.Redis()
 
 
 def sync_redis_entities():
+    logger.info('Sync redis entities')
     for brand in CarBrand.objects.all():
         R.hset(BRANDS_KEY, brand.id, brand.name)
         for model in brand.car_models.all():
@@ -29,6 +30,7 @@ def sync_redis_entities():
         R.hset(COUNTRIES_KEY, country.id, country.name)
         for city in country.cities.all():
             R.hset(CITIES_KEY_PATTERN.format(country=country.id), city.id, city.name)
+    logger.info('Sync finished')
 
 
 if __name__ == '__main__':

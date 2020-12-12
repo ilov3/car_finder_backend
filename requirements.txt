@@ -1,0 +1,13 @@
+django-admin-autocomplete-filter
+django
+djangorestframework
+django-filter
+psycopg2
+geocoder
+celery
+pillow
+gunicorn
+django-celery-beat
+redis
+django-timezone-field==4.0
+pytz

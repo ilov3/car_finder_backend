@@ -179,7 +179,8 @@ class CarSale(admin.ModelAdmin):
                     'purchased',
                     'formatted_price',
                     'url_link',
-                    'human_date_added')
+                    'human_date_added',
+                    'image',)
     list_display_links = ('human_date_added',)
     autocomplete_fields = ['model', 'brand']
     list_filter = (PriceFilter,

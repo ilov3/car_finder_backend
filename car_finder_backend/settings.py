@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.gis',
     'admin_auto_filters',
+    'rest_framework',
+    'django_filters',
+    'django_celery_beat',
     'car_finder_app',
 ]
 
@@ -77,8 +80,11 @@ WSGI_APPLICATION = 'car_finder_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'car_finder',
-        'USER': 'bulat',
+        'NAME': os.getenv('DB_NAME', 'car_finder'),
+        'USER': os.getenv('DB_NAME', 'qa'),
+        'PASSWORD': os.getenv('DB_NAME', 'qweasd12'),
+        'HOST': os.getenv('DB_HOST', 'db'),
+        'PORT': 5432,
     }
 }
 
@@ -119,8 +125,86 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s::%(levelname)s::%(module)s::%(funcName)s::%(lineno)d: %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+        },
+        'file_handler': {
+            'level': 'INFO',
+            'filters': ['require_debug_false'],
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.environ.get('LOG_PATH', os.path.join(BASE_DIR, 'app.log')),
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 10,
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file_handler'],
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        '': {
+            'level': 'INFO',
+            'handlers': ['console', 'file_handler'],
+            'propagate': False,
+        },
+    }
+}
+
+# THIRDPARTY
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+
 # SCRAPY SETTINGS
 SCRAPY_ITEMS_REDIS_KEY = 'Drive2:items'
-SCRAPY_LAUNCH_INTERVAL = 60
 SCRAPY_REDIS_PORT = 6379
-SCRAPY_REDIS_HOST = '127.0.0.1'
+SCRAPY_REDIS_HOST = REDIS_HOST
+SCRAPYD_HOST = os.getenv('SCRAPYD_HOST', '127.0.0.1')
+SCRAPYD_PORT = os.getenv('SCRAPYD_PORT', '6800')
+
+# CELERY
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:6379'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:6379'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'
+CELERY_WORKER_REDIRECT_STDOUTS = False
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+}

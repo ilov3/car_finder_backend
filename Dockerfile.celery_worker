@@ -1,0 +1,16 @@
+FROM python:3.7
+RUN apt-get update && apt-get install -y \
+    binutils \
+    libproj-dev \
+    gdal-bin \
+    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1
+ADD requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . /app
+WORKDIR /app
+RUN mkdir -p ./media/admin
+RUN mkdir -p ./media/sale_images
+
+CMD ["celery", "-A",  "car_finder_backend", "worker", "-l", "INFO", "-c", "4"]

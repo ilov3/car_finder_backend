@@ -111,6 +111,12 @@ class Car(models.Model):
         return f'{self.model} {self.city} {self.title}'
 
 
+class CarSaleInfoQuerySet(models.QuerySet):
+    def actual_sales(self):
+        last_spider_run = SpiderRun.objects.filter(duration__isnull=False).last()
+        return self.filter(last_spider_run=last_spider_run)
+
+
 class CarSaleInfo(models.Model):
     last_spider_run = models.ForeignKey(SpiderRun, on_delete=models.DO_NOTHING, related_name='sales')
     date_added = models.DateTimeField(auto_now_add=True)
@@ -128,14 +134,22 @@ class CarSaleInfo(models.Model):
     title = models.TextField(blank=True, null=True)  # to delete
     city = models.ForeignKey(City, on_delete=models.DO_NOTHING, related_name='sales')  # to delete
     country = models.ForeignKey(Country, on_delete=models.DO_NOTHING, related_name='sales')  # to delete
-    car = models.ForeignKey(Car, null=True, blank=True, related_name='sales', on_delete=models.DO_NOTHING)
+    image = models.ImageField(upload_to='sale_images/', blank=True, null=True)
+    objects = CarSaleInfoQuerySet.as_manager()
+    # car = models.ForeignKey(Car, null=True, blank=True, related_name='sales', on_delete=models.DO_NOTHING)
 
     def __str__(self):
-        price = intcomma(self.price) if self.price else ''
-        return f'{self.city}: {self.model}: {price} {self.url}'
+        return f'{self.city}: {self.model}: {self.pretty_price()} {self.ru_url}'
 
     def url_link(self):
-        return format_html(f'<a href={self.url} target="_blank">Link</a>')
+        return format_html(f'<a href={self.ru_url} target="_blank">Link</a>')
+
+    def pretty_price(self):
+        return intcomma(self.price) if self.price else ''
+
+    @property
+    def ru_url(self):
+        return self.url.replace('.com', '.ru')
 
     class Meta:
         ordering = ('-date_added',)
