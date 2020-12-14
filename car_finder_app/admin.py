@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.humanize.templatetags.humanize import naturaltime, intcomma
 from django.db.models import Q
+from django.utils.html import format_html
 
 from car_finder_app.models import CarSaleInfo, CarModel, CarBrand, Generation, SpiderRun, UserProfile, City
 
@@ -180,7 +181,7 @@ class CarSale(admin.ModelAdmin):
                     'formatted_price',
                     'url_link',
                     'human_date_added',
-                    'image',)
+                    'image_preview',)
     list_display_links = ('human_date_added',)
     autocomplete_fields = ['model', 'brand']
     list_filter = (PriceFilter,
@@ -239,3 +240,8 @@ class CarSale(admin.ModelAdmin):
 
     human_date_added.short_description = 'Date added'
     human_date_added.admin_order_field = 'date_added'
+
+    def image_preview(self, obj):
+        return format_html(f'<img src="{obj.image.url if obj.image else ""}">')
+
+    image_preview.short_description = 'Image'

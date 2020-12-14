@@ -83,7 +83,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'car_finder'),
         'USER': os.getenv('DB_NAME', 'qa'),
         'PASSWORD': os.getenv('DB_NAME', 'qweasd12'),
-        'HOST': os.getenv('DB_HOST', 'db'),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
         'PORT': 5432,
     }
 }

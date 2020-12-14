@@ -2,7 +2,7 @@ django-admin-autocomplete-filter
 django
 djangorestframework
 django-filter
-psycopg2
+psycopg2-binary
 geocoder
 celery
 pillow
